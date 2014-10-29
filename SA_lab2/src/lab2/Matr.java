@@ -313,7 +313,7 @@ public class Matr {
             }
             for (int q = 0; q < x.length; q++) {
                 for (int j = 0; j < x[0].length; j++) {
-                    str.append(x[q][j] + "\t");
+                    str.append(String.format("%.4f \t",x[q][j]));
                 }
                 str.append("\r\n");
             }

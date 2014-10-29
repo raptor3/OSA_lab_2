@@ -96,8 +96,8 @@ public class Work {
         Plot2DPanel plot = new Plot2DPanel("South");
         double[][] z, b;
 
-        z = yNG;
-        b = yN;
+        z = yG;
+        b = y;
 
         plot.addLinePlot("Fi" + (index + 1), xG, z[index]);
         plot.addLinePlot("Y" + (index + 1), xG, b[index]);
