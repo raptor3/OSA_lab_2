@@ -30,17 +30,17 @@ public class Matr {
         x3 = new double[n3][m3];
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < m; j++) {
-                x1[i][j] = x[i*m + j];
+                x1[i][j] = x[i * m + j];
             }
         }
         for (int i = 0; i < n2; i++) {
             for (int j = 0; j < m2; j++) {
-                x2[i][j] = x[i*m2 + j + n * m];
+                x2[i][j] = x[i * m2 + j + n * m];
             }
         }
         for (int i = 0; i < n3; i++) {
             for (int j = 0; j < m3; j++) {
-                x3[i][j] = x[i*m3 + j + n * m + n2 * m2];
+                x3[i][j] = x[i * m3 + j + n * m + n2 * m2];
             }
         }
     }
@@ -303,7 +303,7 @@ public class Matr {
     }
 
     public String toString(String name) {
-        StringBuilder str = new StringBuilder(name+":\n");
+        StringBuilder str = new StringBuilder(name);
         for (int i = 1; i < 4; i++) {
             double[][] x = null;
             try {
@@ -313,7 +313,7 @@ public class Matr {
             }
             for (int q = 0; q < x.length; q++) {
                 for (int j = 0; j < x[0].length; j++) {
-                    str.append(x[q][j]+"\t");
+                    str.append(x[q][j] + "\t");
                 }
                 str.append("\r\n");
             }

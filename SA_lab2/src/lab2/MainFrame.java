@@ -570,97 +570,14 @@ public class MainFrame extends javax.swing.JFrame {
         } catch (IOException ex) {
             Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
         }
-
         int length = Integer.parseInt(jTextField1.getText());
-        n1 = Integer.parseInt(jTextField4.getText());
-        n2 = Integer.parseInt(jTextField5.getText());
-        n3 = Integer.parseInt(jTextField6.getText());
-        p1 = Integer.parseInt(jTextField8.getText());
-
-        p2 = Integer.parseInt(jTextField9.getText());
-
-        p3 = Integer.parseInt(jTextField10.getText());
-        m = Integer.parseInt(jTextField7.getText());
-        x1 = new double[n1][length];
-        x2 = new double[n2][length];
-        x3 = new double[n3][length];
-        y = new double[m][length];
-        xG = new double[length];
-
-        for (int i = 0; i < length; i++) {
-            xG[i] = i;
-        }
-        String[] list = new String[m];
-        for (int i = 1; i <= m; i++) {
-            list[i - 1] = "Y" + i;
-        }
-        jComboBox1.setModel(new DefaultComboBoxModel(list));
-        Scanner sc = null;
-        PrintWriter pw = null;
-        try {
-
-            sc = new Scanner(openFile);
-            sc.useLocale(Locale.US);
-            for (int i = 0; i < length; i++) {
-                for (int j = 0; j < x1.length; j++) {
-                    x1[j][i] = sc.nextDouble();
-                }
-                for (int j = 0; j < x2.length; j++) {
-                    x2[j][i] = sc.nextDouble();
-                }
-                for (int j = 0; j < x3.length; j++) {
-                    x3[j][i] = sc.nextDouble();
-                }
-                for (int j = 0; j < y.length; j++) {
-                    y[j][i] = sc.nextDouble();
-                }
-            }
-
-
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            sc.close();
-        }
-//        try {
-//            PrintWriter pw1 = new PrintWriter("input1.txt");
-//            for (int i = 0; i < length; i++) {
-//                for (int j = 0; j < x1.length; j++) {
-//                    pw1.printf(Locale.US,x1[j][i] + "\t\t");
-//                }
-//                for (int j = 0; j < x2.length; j++) {
-//                    pw1.print(x2[j][i] + "\t\t");
-//                }
-//                for (int j = 0; j < x3.length; j++) {
-//                    pw1.print(x3[j][i] + "\t\t");
-//                }
-//                for (int j = 0; j < y.length; j++) {
-//                    pw1.print(y[j][i] + "\t\t");
-//                }
-//                pw1.println();
-//            }
-//            pw1.close();
-//        } catch (FileNotFoundException ex) {
-//            Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-        x1N = Work.norm(x1);
-        x2N = Work.norm(x2);
-        x3N = Work.norm(x3);
-        yN = Work.norm(y);
-
-        if (jRadioButton7.isSelected()) {
-            //
-            bq0 = yN;
-        }
-        if (jRadioButton8.isSelected()) {
-            bq0 = Work.bq0(0, yN);
-
-        }
-        if (jRadioButton9.isSelected()) {
-            bq0 = Work.bq01(0, yN);
-
-        }
-        
+        int n1 = Integer.parseInt(jTextField4.getText());
+        int n2 = Integer.parseInt(jTextField5.getText());
+        int n3 = Integer.parseInt(jTextField6.getText());
+        int p1 = Integer.parseInt(jTextField8.getText());
+        int p2 = Integer.parseInt(jTextField9.getText());
+        int p3 = Integer.parseInt(jTextField10.getText());
+        int m = Integer.parseInt(jTextField7.getText());
         Polinom pol = null;
         if (jRadioButton1.isSelected()) {
             pol = new Chebyshev();
@@ -674,233 +591,39 @@ public class MainFrame extends javax.swing.JFrame {
         if (jRadioButton4.isSelected()) {
             pol = new Lejandra();
         }
-        Psi[] psi = new Psi[m];
-        double[][] maxx = Work.max(x1, x2, x3);
-        double[][] minx = Work.min(x1, x2, x3);
-        Matr lambda = null;
-        try {
-            pw = new PrintWriter(resultFile);
-
-            for (int i = 0; i < m; i++) {
-                if (jRadioButton5.isSelected()) {
-//            F_1 f_1 = new F_1(n1, n2, n3, p1, p2, p3, pol, x1, x2, x3, bq0);
-//            lambda = Work.minimization(f_1, new Matr(n1, p1, n2, p2, n3, p3));
-                    double[][] f_1 = Work.f_1(pol, new int[]{n1, n2, n3}, new int[]{p1, p2, p3}, x1N, x2N, x3N);
-                    double[] lambda_i = Work.conjGradMethod(f_1, bq0[i]);
-                    lambda = new Matr(n1, p1 + 1, n2, p2 + 1, n3, p3 + 1, lambda_i);
-                    psi[i] = new Psi(n1, n2, n3, p1, p2, p3, pol, lambda, maxx, minx);
-//                    Work.nevyazka(psi[i], bq0[i], x1N, x2N, x3N);
-                    write(lambda.toString("lambda " + i + "\r\n"));
-                    pw.println(lambda.toString("lambda " + i + "\r\n"));
-//                    System.out.println("f_1");
-//                    for (int k = 0; k < f_1.length; k++) {
-//                        for (int h = 0; h < f_1[0].length; h++) {
-//                            System.out.printf("%.4f \t",f_1[k][h]-A[k][h]);
-//                        }
-//                        System.out.println("");
-//                    }
-                    // System.out.println("psi");
-                } else if (jRadioButton6.isSelected()) {
-//            F_1 f_11 = new F_1(n1, 0, 0, p1, 0, 0, pol, x1, x2, x3, bq0);
-//            Matr lambda1 = Work.minimization(f_11, new Matr(n1, p1, 0, 0, 0, 0));
-//            F_1 f_12 = new F_1(0, n2, 0, 0, p2, 0, pol, x1, x2, x3, bq0);
-//            Matr lambda2 = Work.minimization(f_12, new Matr(0, 0, n2, p2, 0, 0));
-//            F_1 f_13 = new F_1(0, 0, n3, 0, 0, p3, pol, x1, x2, x3, bq0);
-//            Matr lambda3 = Work.minimization(f_13, new Matr(0, 0, 0, 0, n3, p3));
-//            lambda = new Matr(lambda1.getX1(), lambda2.getX2(), lambda3.getX3());
-                    double[] lambda_i_1 = Work.conjGradMethod(Work.f_1(pol, new int[]{n1, 0, 0}, new int[]{p1, 0, 0}, x1N, x2N, x3N), bq0[i]);
-                    double[] lambda_i_2 = Work.conjGradMethod(Work.f_1(pol, new int[]{0, n2, 0}, new int[]{0, p2, 0}, x1N, x2N, x3N), bq0[i]);
-                    double[] lambda_i_3 = Work.conjGradMethod(Work.f_1(pol, new int[]{0, 0, n3}, new int[]{0, 0, p3}, x1N, x2N, x3N), bq0[i]);
-                    double[] lambda_i = new double[lambda_i_1.length + lambda_i_2.length + lambda_i_3.length];
-                    System.arraycopy(lambda_i_1, 0, lambda_i, 0, lambda_i_1.length);
-                    System.arraycopy(lambda_i_2, 0, lambda_i, lambda_i_1.length, lambda_i_2.length);
-                    System.arraycopy(lambda_i_3, 0, lambda_i, lambda_i_1.length + lambda_i_2.length, lambda_i_3.length);
-                    lambda = new Matr(n1, p1 + 1, n2, p2 + 1, n3, p3 + 1, lambda_i);
-                    psi[i] = new Psi(n1, n2, n3, p1, p2, p3, pol, lambda, maxx, minx);
-                    write(lambda.toString("lambda " + i + "\r\n"));
-                    pw.println(lambda.toString("lambda " + i + "\r\n"));
-                }
-            }
-            //      psi = new Psi(n1, n2, n3, p1, p2, p3, pol, lambda);
-            double[][] a1 = new double[m][];
-            double[][] a2 = new double[m][];
-            double[][] a3 = new double[m][];
-            for (int i = 0; i < m; i++) {
-//            Matr a;
-//            F_2 fi21 = new F_2(psi, x1, y[i], 1);
-//            a = Work.minimization(fi21, new Matr(1, n1, 0, 0, 0, 0));
-//            for (int j = 0; j < n1; j++) {
-//                a1[i][j] = a.getX1()[0][j];
-//            }
-//            F_2 fi22 = new F_2(psi, x2, y[i], 2);
-//            a = Work.minimization(fi22, new Matr(1, n2, 0, 0, 0, 0));
-//            for (int j = 0; j < n2; j++) {
-//                a2[i][j] = a.getX1()[0][j];
-//            }
-//            F_2 fi23 = new F_2(psi, x3, y[i], 3);
-//            a = Work.minimization(fi23, new Matr(1, n3, 0, 0, 0, 0));
-//            for (int j = 0; j < n3; j++) {
-//                a3[i][j] = a.getX1()[0][j];
-//            }
-////                double[][] f_2 = new double[x1N.length+x2N.length+x3N.length][];
-////                double[][] f = Work.F_2(psi, x1N, 1, i);
-////                for (int k = 0; k <x1.length; k++) {
-////                    f_2[k] = f[k];
-////                }
-////                f = Work.F_2(psi, x2N, 2, i);
-////                for (int k = 0; k <x2N.length; k++) {
-////                    f_2[k + x1N.length] = f[k];
-////                }
-////                f = Work.F_2(psi, x3N, 3, i);
-////                for (int k = 0; k <x3N.length; k++) {
-////                    f_2[k + x1N.length + x2N.length] = f[k];
-////                }
-////                double[] a = Work.Conjugate_gradient_method(f_2, yN[i]);
-////                
-////                    a1[i] = new double[x1N.length];
-////                    System.arraycopy(a, 0, a1[i], 0, x1N.length);
-////                    a2[i] = new double[x2N.length];
-////                    System.arraycopy(a, x1N.length, a2[i], 0, x2N.length);
-////                    a3[i] = new double[x3N.length];
-////                    System.arraycopy(a, x1N.length+x2N.length, a3[i], 0, x3N.length);
-
-                a1[i] = Work.conjGradMethod(Work.f_2(psi, x1N, 1, i), yN[i]);
-                a2[i] = Work.conjGradMethod(Work.f_2(psi, x2N, 2, i), yN[i]);
-                a3[i] = Work.conjGradMethod(Work.f_2(psi, x3N, 3, i), yN[i]);
-
-            }
-
-            Matr a = new Matr(a1, a2, a3);
-            write(a.toString("a\r\n"));
-            pw.println(a.toString("a\r\n"));
-            Fi fi = new Fi(n1, n2, n3, psi, a);
-            //System.out.println("phi");
-            double[][] c1 = new double[1][m];
-            double[][] c2 = new double[1][m];
-            double[][] c3 = new double[1][m];
-            for (int i = 0; i < m; i++) {
-//            F_3 f3i = new F_3(fi, x1, x2, x3, y[i], i);
-//            Matr c = Work.minimization(f3i, new Matr(1, 1, 1, 1, 1, 1));
-                double[] c = Work.conjGradMethod(Work.F_3(fi, x1N, x2N, x3N, i), yN[i]);
-                c1[0][i] = c[0];
-                c2[0][i] = c[1];
-                c3[0][i] = c[2];
-                //System.out.println("c1");
-            }
-            //System.out.println("ph");
-            Matr c = new Matr(c1, c2, c3);
-            write(c.toString("c\r\n"));
-            pw.println(c.toString("c\r\n"));
-            Fi_i finalFunction = new Fi_i(fi, c);
-            double[] maxj = new double[m];
-            double[] minj = new double[m];
-            for (int i = 0; i < y.length; i++) {
-                maxj[i] = y[i][0];
-                minj[i] = y[i][0];
-                for (int j = 1; j < y[i].length; j++) {
-                    if (maxj[i] < y[i][j]) {
-                        maxj[i] = y[i][j];
-                    } else if (minj[i] > y[i][j]) {
-                        minj[i] = y[i][j];
-                    }
-                }
-
-            }
-            int[] n = {n1, n2, n3};
-            for (int i = 0; i < m; i++) {
-                for (int s = 1; s < 4; s++) {
-                    for (int js = 0; js < n[s - 1]; js++) {
-                        write("psi" + i + s + js + "=" + psi[i].toString(1, s, js) + "\n");
-                        pw.println("psi" + i + s + js + "=" + psi[i].toString(1, s, js));
-                    }
-                }
-            }
-            for (int i = 0; i < m; i++) {
-                for (int s = 1; s < 4; s++) {
-                    write("Ф" + i + s + "=" + fi.toString(1, i, s) + "\n");
-                    pw.println("Ф" + i + s + "=" + fi.toString(1, i, s));
-                }
-            }
-            for (int i = 0; i < m; i++) {
-                write("Ф" + i + "=" + finalFunction.toString(i) + "\n");
-                pw.println("Ф" + i + "=" + finalFunction.toString(i));
-
-            }
-            pw.println("В нормированном виде");
-            for (int i = 0; i < m; i++) {
-                pw.println("Ф" + i + "=" + finalFunction.toStringNorm(i));
-
-            }
-            pw.println("В ненормированном виде");
-            for (int i = 0; i < m; i++) {
-                pw.println("Ф" + i + "=" + finalFunction.toStringNenorm(i, maxj[i] - minj[i]) + "+" + minj);
-
-            }
-
-            double[] x11 = new double[n1];
-            double[] x12 = new double[n2];
-            double[] x13 = new double[n3];
-            yG = new double[m][length];
-            yNG = new double[m][length];
-            nevyazka = new double[m];
-            pw.println("нормированные");
-            for (int j = 0; j < m; j++) {
-                pw.print("Y" + j + "\t\t");
-            }
-            pw.println();
-
-            for (int i = 0; i < length; i++) {
-                for (int j = 0; j < n1; j++) {
-                    x11[j] = x1N[j][i];
-                }
-                for (int j = 0; j < n2; j++) {
-                    x12[j] = x2N[j][i];
-                }
-                for (int j = 0; j < n3; j++) {
-                    x13[j] = x3N[j][i];
-                }
-
-                for (int j = 0; j < m; j++) {
-
-                    yNG[j][i] = finalFunction.func(j, x11, x12, x13);
-
-                    if (nevyazka[j] < Math.abs(yNG[j][i] - yN[j][i])) {
-                        nevyazka[j] = Math.abs(yNG[j][i] - yN[j][i]);
-                    };
-                    pw.print(yNG[j][i] + "\t\t");
-
-                }
-                pw.println();
-            }
-
-            pw.println("без нормировки");
-            for (int j = 0; j < m; j++) {
-                pw.print("Y" + j + "\t\t");
-            }
-            pw.println();
-
-            for (int j = 0; j < y[0].length; j++) {
-                for (int i = 0; i < y.length; i++) {
-                    yG[i][j] = yNG[i][j] * (maxj[i] - minj[i]) + minj[i];
-                    pw.print(yG[i][j] + "\t\t");
-                }
-                pw.println();
-            }
-            pw.println();
-            pw.println("Невязка");
-
-            for (int j = 0; j < y[0].length; j++) {
-                for (int i = 0; i < y.length; i++) {
-
-                    pw.print(Math.abs(yNG[i][j] - yN[i][j]) + "\t\t");
-                }
-                pw.println();
-            }
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
-        } finally {
-            pw.close();
+        int chooseBQ0 = 0;
+        if (jRadioButton7.isSelected()) {
+            chooseBQ0 = 1;
+            //
+            // bq0 = yN;
         }
+        if (jRadioButton8.isSelected()) {
+            chooseBQ0 = 2;
+            //bq0 = Work.bq0(0, yN);
+
+        }
+        if (jRadioButton9.isSelected()) {
+            chooseBQ0 = 3;
+            //bq0 = Work.bq01(0, yN);
+
+        }
+        int chooseSolveLambda = 0;
+        if (jRadioButton5.isSelected()) {
+            chooseSolveLambda = 1;
+        } else if (jRadioButton6.isSelected()) {
+            chooseSolveLambda = 2;
+        }
+
+        String[] list = new String[m];
+        for (int i = 1; i <= m; i++) {
+            list[i - 1] = "Y" + i;
+        }
+        jComboBox1.setModel(new DefaultComboBoxModel(list));
+
+        work = new Work(openFile, resultFile, 3,length,m,
+                new int[]{n1, n2, n3}, new int[]{p1, p2, p3}, pol, chooseBQ0, chooseSolveLambda);
+        work.work();
+        write(work.getResult());
     }//GEN-LAST:event_jButton4ActionPerformed
 
     private void write(String text) {
@@ -909,25 +632,13 @@ public class MainFrame extends javax.swing.JFrame {
     }
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
-        JFrame frame = new JFrame();
-        Plot2DPanel plot = new Plot2DPanel("South");
-        double[][] z, b;
-        if (!jCheckBox1.isSelected()) {
-            z = yG;
-            b = y;
-        } else {
-            z = yNG;
-            b = yN;
-        }
-        plot.addLinePlot("Fi" + (jComboBox1.getSelectedIndex() + 1), xG, z[jComboBox1.getSelectedIndex()]);
-        plot.addLinePlot("Y" + (jComboBox1.getSelectedIndex() + 1), xG, b[jComboBox1.getSelectedIndex()]);
 
-        double[] a = {0, 0};
-        plot.addLinePlot("Невязка = " + Double.toString(nevyazka[jComboBox1.getSelectedIndex()]), a, a);
-        frame.add(plot);
-        frame.setVisible(true);
-        frame.pack();
-        frame.setBounds(0, 0, 800, 600);// TODO add your handling code here:
+        if (!jCheckBox1.isSelected()) {
+            work.drawGraphNenorm(jComboBox1.getSelectedIndex());
+        } else {
+            work.drawGraphNorm(jComboBox1.getSelectedIndex());
+        }
+// TODO add your handling code here:
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jRadioButton9ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButton9ActionPerformed
@@ -970,15 +681,7 @@ public class MainFrame extends javax.swing.JFrame {
     }
     File openFile = new File("input.txt");
     File resultFile = new File("output.txt");
-    double[][] x1, x1N;
-    double[][] x2, x2N;
-    double[][] x3, x3N;
-    double[][] y, yN;
-    double[][] bq0;
-    int p1, p2, p3, n1, n2, n3, m;
-    double[] xG;
-    double[][] yG, yNG;
-    double[] nevyazka;
+    private Work work;
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup buttonGroup1;
     private javax.swing.ButtonGroup buttonGroup2;

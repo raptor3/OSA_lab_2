@@ -6,8 +6,17 @@
 package lab2;
 
 import Jama.Matrix;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Locale;
+import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JFrame;
+import org.math.plot.Plot2DPanel;
 
 /**
  *
@@ -17,7 +26,325 @@ public class Work {
 
     public static final double EPS = 1e-3;
 
-    public static double[][] norm(double[][] x) {
+    private double[][][] x;
+    private double[][][] xN;
+    private double[][] y;
+    private double[][] yN;
+    private double[][] bq0;
+    private int m;
+    private int length;
+    private int[] p;
+    private int[] n;
+    private double[] xG;
+    private double[][] yG;
+    private double[][] yNG;
+    private double[] nevyazka;
+    private Polinom pol;
+    private File openFile;
+    private File resultFile;
+    private int chooseBQ0;
+    private double[][] maxX;
+    private double[][] minX;
+    private int chooseSolveOfLambda;
+    private StringBuilder result;
+
+    public Work(File openFile, File outputFile, int k, int length, int m,
+            int[] n, int[] p, Polinom pol, int chooseBQ0, int chooseSolveOfLambda) {
+        result = new StringBuilder();
+        x = new double[k][][];
+        xN = new double[k][][];
+        y = new double[m][length];
+        for (int i = 0; i < k; i++) {
+            x[i] = new double[n[i]][length];
+        }
+        this.length = length;
+        this.m = m;
+        this.p = p;
+        this.n = n;
+        this.pol = pol;
+        this.openFile = openFile;
+        this.resultFile = outputFile;
+        this.chooseBQ0 = chooseBQ0;
+        this.chooseSolveOfLambda = chooseSolveOfLambda;
+        xG = new double[length];
+        for (int i = 0; i < length; i++) {
+            xG[i] = i;
+        }
+    }
+
+    public void drawGraphNorm(int index) {
+        JFrame frame = new JFrame("Y" + (index + 1));
+        Plot2DPanel plot = new Plot2DPanel("South");
+        double[][] z, b;
+
+        z = yNG;
+        b = yN;
+
+        plot.addLinePlot("Fi" + (index + 1), xG, z[index]);
+        plot.addLinePlot("Y" + (index + 1), xG, b[index]);
+
+        double[] a = {0, 0};
+        plot.addLinePlot("Невязка = " + Double.toString(nevyazka[index]), a, a);
+        frame.add(plot);
+        frame.setVisible(true);
+        frame.pack();
+        frame.setBounds(0, 0, 800, 600);
+    }
+
+    public void drawGraphNenorm(int index) {
+        JFrame frame = new JFrame("Y" + (index + 1));
+        Plot2DPanel plot = new Plot2DPanel("South");
+        double[][] z, b;
+
+        z = yNG;
+        b = yN;
+
+        plot.addLinePlot("Fi" + (index + 1), xG, z[index]);
+        plot.addLinePlot("Y" + (index + 1), xG, b[index]);
+
+        double[] a = {0, 0};
+        plot.addLinePlot("Невязка = " + Double.toString(nevyazka[index]), a, a);
+        frame.add(plot);
+        frame.setVisible(true);
+        frame.pack();
+        frame.setBounds(0, 0, 800, 600);
+    }
+
+    public String getResult() {
+        return result.toString();
+    }
+
+    public void work() {
+
+        Scanner sc = null;
+        PrintWriter pw = null;
+        try {
+            sc = new Scanner(openFile);
+            sc.useLocale(Locale.US);
+            for (int i = 0; i < length; i++) {
+                for (int k = 0; k < x.length; k++) {
+                    for (int j = 0; j < x[k].length; j++) {
+                        x[k][j][i] = sc.nextDouble();
+                    }
+                }
+                for (int j = 0; j < y.length; j++) {
+                    y[j][i] = sc.nextDouble();
+                }
+            }
+
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            sc.close();
+        }
+
+        //Normalization
+        for (int i = 0; i < x.length; i++) {
+            xN[i] = norm(x[i]);
+        }
+        yN = norm(y);
+
+        // Definition of bq0
+        if (chooseBQ0 == 1) {
+            //
+            bq0 = yN;
+        }
+        if (chooseBQ0 == 2) {
+            bq0 = bq0(0, yN);
+
+        }
+        if (chooseBQ0 == 3) {
+            bq0 = bq01(0, yN);
+
+        }
+
+        maxX = max(x);
+        minX = min(x);
+
+        Psi[] psi = new Psi[m];
+        // Find lambda
+        Matr lambda = null;
+        try {
+            pw = new PrintWriter(resultFile);
+
+            for (int i = 0; i < m; i++) {
+                if (this.chooseSolveOfLambda == 1) {
+                    double[][] f1 = f1(pol, n, p, xN[0], xN[1], xN[2]);
+                    double[] lambda_i = conjGradMethod(f1, bq0[i]);
+                    lambda = new Matr(n[0], p[0] + 1, n[1], p[1] + 1, n[2], p[2] + 1, lambda_i);
+                    psi[i] = new Psi(n[0], n[1], n[2], p[0], p[1], p[2], pol, lambda, maxX, minX);
+                    result.append(lambda.toString("lambda " + i + ":\r\n"));
+                    pw.println(lambda.toString("lambda " + i + "\r\n"));
+                } else if (this.chooseSolveOfLambda == 2) {
+                    double[] lambda_i_1 = conjGradMethod(f1(pol, new int[]{n[0], 0, 0}, new int[]{p[0], 0, 0}, xN[0], xN[1], xN[2]), bq0[i]);
+                    double[] lambda_i_2 = conjGradMethod(f1(pol, new int[]{0, n[1], 0}, new int[]{0, p[1], 0}, xN[0], xN[1], xN[2]), bq0[i]);
+                    double[] lambda_i_3 = conjGradMethod(f1(pol, new int[]{0, 0, n[2]}, new int[]{0, 0, p[2]}, xN[0], xN[1], xN[2]), bq0[i]);
+                    double[] lambda_i = new double[lambda_i_1.length + lambda_i_2.length + lambda_i_3.length];
+                    System.arraycopy(lambda_i_1, 0, lambda_i, 0, lambda_i_1.length);
+                    System.arraycopy(lambda_i_2, 0, lambda_i, lambda_i_1.length, lambda_i_2.length);
+                    System.arraycopy(lambda_i_3, 0, lambda_i, lambda_i_1.length + lambda_i_2.length, lambda_i_3.length);
+                    lambda = new Matr(n[0], p[0] + 1, n[1], p[1] + 1, n[2], p[2] + 1, lambda_i);
+                    psi[i] = new Psi(n[0], n[1], n[2], p[0], p[1], p[2], pol, lambda, maxX, minX);
+                    result.append(lambda.toString("lambda " + i + ":\r\n"));
+                    pw.println(lambda.toString("lambda " + i + ":\r\n"));
+                }
+            }
+            double[][] a1 = new double[m][];
+            double[][] a2 = new double[m][];
+            double[][] a3 = new double[m][];
+            for (int i = 0; i < m; i++) {
+
+////                double[][] f_2 = new double[x1N.length+x2N.length+x3N.length][];
+////                double[][] f = Work.F_2(psi, x1N, 1, i);
+////                for (int k = 0; k <x1.length; k++) {
+////                    f_2[k] = f[k];
+////                }
+////                f = Work.F_2(psi, x2N, 2, i);
+////                for (int k = 0; k <x2N.length; k++) {
+////                    f_2[k + x1N.length] = f[k];
+////                }
+////                f = Work.F_2(psi, x3N, 3, i);
+////                for (int k = 0; k <x3N.length; k++) {
+////                    f_2[k + x1N.length + x2N.length] = f[k];
+////                }
+////                double[] a = Work.Conjugate_gradient_method(f_2, yN[i]);
+////                
+////                    a1[i] = new double[x1N.length];
+////                    System.arraycopy(a, 0, a1[i], 0, x1N.length);
+////                    a2[i] = new double[x2N.length];
+////                    System.arraycopy(a, x1N.length, a2[i], 0, x2N.length);
+////                    a3[i] = new double[x3N.length];
+////                    System.arraycopy(a, x1N.length+x2N.length, a3[i], 0, x3N.length);
+                a1[i] = conjGradMethod(f2(psi, xN[0], 1, i), yN[i]);
+                a2[i] = conjGradMethod(f2(psi, xN[1], 2, i), yN[i]);
+                a3[i] = conjGradMethod(f2(psi, xN[2], 3, i), yN[i]);
+
+            }
+
+            Matr a = new Matr(a1, a2, a3);
+            result.append(a.toString("a\r\n"));
+            pw.println(a.toString("a\r\n"));
+            Fi fi = new Fi(n[0], n[1], n[2], psi, a);
+            double[][] c1 = new double[1][m];
+            double[][] c2 = new double[1][m];
+            double[][] c3 = new double[1][m];
+            for (int i = 0; i < m; i++) {
+                double[] c = conjGradMethod(f3(fi, xN[0], xN[1], xN[2], i), yN[i]);
+                c1[0][i] = c[0];
+                c2[0][i] = c[1];
+                c3[0][i] = c[2];
+            }
+            Matr c = new Matr(c1, c2, c3);
+            result.append(c.toString("c\r\n"));
+            pw.println(c.toString("c\r\n"));
+            Fi_i finalFunction = new Fi_i(fi, c);
+            double[] maxj = new double[m];
+            double[] minj = new double[m];
+            for (int i = 0; i < y.length; i++) {
+                maxj[i] = y[i][0];
+                minj[i] = y[i][0];
+                for (int j = 1; j < y[i].length; j++) {
+                    if (maxj[i] < y[i][j]) {
+                        maxj[i] = y[i][j];
+                    } else if (minj[i] > y[i][j]) {
+                        minj[i] = y[i][j];
+                    }
+                }
+
+            }
+            for (int i = 0; i < m; i++) {
+                for (int s = 1; s < 4; s++) {
+                    for (int js = 0; js < n[s - 1]; js++) {
+                        result.append("psi" + i + s + js + "=" + psi[i].toString(1, s, js) + "\n");
+                        pw.println("psi" + i + s + js + "=" + psi[i].toString(1, s, js));
+                    }
+                }
+            }
+            for (int i = 0; i < m; i++) {
+                for (int s = 1; s < 4; s++) {
+                    result.append("Ф" + i + s + "=" + fi.toString(1, i, s) + "\n");
+                    pw.println("Ф" + i + s + "=" + fi.toString(1, i, s));
+                }
+            }
+            for (int i = 0; i < m; i++) {
+                result.append("Ф" + i + "=" + finalFunction.toString(i) + "\n");
+                pw.println("Ф" + i + "=" + finalFunction.toString(i));
+
+            }
+            pw.println("В нормированном виде");
+            for (int i = 0; i < m; i++) {
+                pw.println("Ф" + i + "=" + finalFunction.toStringNorm(i));
+
+            }
+            pw.println("В ненормированном виде");
+            for (int i = 0; i < m; i++) {
+                pw.println("Ф" + i + "=" + finalFunction.toStringNenorm(i, maxj[i] - minj[i]) + "+" + minj);
+
+            }
+            double[][] xForCalc = new double[x.length][];
+            for (int i = 0; i < x.length; i++) {
+                xForCalc[i] = new double[n[i]];
+            }
+            yG = new double[m][length];
+            yNG = new double[m][length];
+            nevyazka = new double[m];
+            pw.println("нормированные");
+            for (int j = 0; j < m; j++) {
+                pw.print("Y" + j + "\t\t");
+            }
+            pw.println();
+
+            for (int i = 0; i < length; i++) {
+                for (int k = 0; k < x.length; k++) {
+                    for (int j = 0; j < n[k]; j++) {
+                        xForCalc[k][j] = xN[k][j][i];
+                    }
+                }
+
+                for (int j = 0; j < m; j++) {
+
+                    yNG[j][i] = finalFunction.func(j, xForCalc[0], xForCalc[1], xForCalc[2]);
+
+                    if (nevyazka[j] < Math.abs(yNG[j][i] - yN[j][i])) {
+                        nevyazka[j] = Math.abs(yNG[j][i] - yN[j][i]);
+                    };
+                    pw.print(yNG[j][i] + "\t\t");
+
+                }
+                pw.println();
+            }
+
+            pw.println("без нормировки");
+            for (int j = 0; j < m; j++) {
+                pw.print("Y" + j + "\t\t");
+            }
+            pw.println();
+
+            for (int j = 0; j < y[0].length; j++) {
+                for (int i = 0; i < y.length; i++) {
+                    yG[i][j] = yNG[i][j] * (maxj[i] - minj[i]) + minj[i];
+                    pw.print(yG[i][j] + "\t\t");
+                }
+                pw.println();
+            }
+            pw.println();
+            pw.println("Невязка");
+
+            for (int j = 0; j < y[0].length; j++) {
+                for (int i = 0; i < y.length; i++) {
+
+                    pw.print(Math.abs(yNG[i][j] - yN[i][j]) + "\t\t");
+                }
+                pw.println();
+            }
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            pw.close();
+        }
+    }
+
+    public double[][] norm(double[][] x) {
         double[][] xn = new double[x.length][x[0].length];
         for (int i = 0; i < x.length; i++) {
             double maxj = x[i][0];
@@ -36,71 +363,49 @@ public class Work {
         return xn;
     }
 
-    public static double[][] max(double[][] x1, double[][] x2, double[][] x3) {
-        double[][] max = new double[3][];
-        max[0] = new double[x1.length];
-        max[1] = new double[x2.length];
-        max[2] = new double[x3.length];
-        for (int i = 0; i < x1.length; i++) {
-            max[0][i] = x1[i][0];
-            for (int j = 1; j < x1[i].length; j++) {
-                if (max[0][i] < x1[i][j]) {
-                    max[0][i] = x1[i][j];
-                }
-            }
-        }
-        for (int i = 0; i < x2.length; i++) {
-            max[1][i] = x2[i][0];
-            for (int j = 1; j < x2[i].length; j++) {
-                if (max[1][i] < x2[i][j]) {
-                    max[1][i] = x2[i][j];
-                }
-            }
-        }
-        for (int i = 0; i < x3.length; i++) {
-            max[2][i] = x3[i][0];
-            for (int j = 1; j < x3[i].length; j++) {
-                if (max[2][i] < x3[i][j]) {
-                    max[2][i] = x3[i][j];
+    private double[] maxXi(double[][] x) {
+        double[] max = new double[x.length];
+        for (int i = 0; i < x.length; i++) {
+            max[i] = x[i][0];
+            for (int j = 1; j < x[i].length; j++) {
+                if (max[i] < x[i][j]) {
+                    max[i] = x[i][j];
                 }
             }
         }
         return max;
     }
 
-    public static double[][] min(double[][] x1, double[][] x2, double[][] x3) {
-        double[][] max = new double[3][];
-        max[0] = new double[x1.length];
-        max[1] = new double[x2.length];
-        max[2] = new double[x3.length];
-        for (int i = 0; i < x1.length; i++) {
-            max[0][i] = x1[i][0];
-            for (int j = 1; j < x1[i].length; j++) {
-                if (max[0][i] > x1[i][j]) {
-                    max[0][i] = x1[i][j];
-                }
-            }
-        }
-        for (int i = 0; i < x2.length; i++) {
-            max[1][i] = x2[i][0];
-            for (int j = 1; j < x2[i].length; j++) {
-                if (max[1][i] > x2[i][j]) {
-                    max[1][i] = x2[i][j];
-                }
-            }
-        }
-        for (int i = 0; i < x3.length; i++) {
-            max[2][i] = x3[i][0];
-            for (int j = 1; j < x3[i].length; j++) {
-                if (max[2][i] > x3[i][j]) {
-                    max[2][i] = x3[i][j];
-                }
-            }
+    public double[][] max(double[][][] x) {
+        double[][] max = new double[x.length][];
+        for (int i = 0; i < x.length; i++) {
+            max[i] = maxXi(x[i]);
         }
         return max;
     }
 
-    public static double[][] bq0(int index, double[][] y) {
+    private double[] minXi(double[][] x) {
+        double[] min = new double[x.length];
+        for (int i = 0; i < x.length; i++) {
+            min[i] = x[i][0];
+            for (int j = 1; j < x[i].length; j++) {
+                if (min[i] > x[i][j]) {
+                    min[i] = x[i][j];
+                }
+            }
+        }
+        return min;
+    }
+
+    public double[][] min(double[][][] x) {
+        double[][] min = new double[x.length][];
+        for (int i = 0; i < x.length; i++) {
+            min[i] = minXi(x[i]);
+        }
+        return min;
+    }
+
+    public double[][] bq0(int index, double[][] y) {
         double[][] bq0 = new double[y.length][y[0].length];
         for (int i = 0; i < bq0[0].length; i++) {
             double maxj = y[0][i];
@@ -120,7 +425,7 @@ public class Work {
         return bq0;
     }
 
-    public static double[][] bq01(int index, double[][] y) {
+    public double[][] bq01(int index, double[][] y) {
         double[][] bq0 = new double[y.length][y[0].length];
         for (int i = 0; i < bq0.length; i++) {
             double mid = 0;
@@ -135,96 +440,7 @@ public class Work {
         return bq0;
     }
 
-    public static Matr minimization(FuncFromMatr func, Matr x) {
-        //ArrayList<Matr> points = new ArrayList<Matr>();
-        Matr x_k = x;
-        Matr x_k1;
-        Matr diff;
-        Matr direct = x_k;
-        double beta = 0;
-        int k = 0;
-        Matr minusGrad1 = gradient(func, x_k).mult(-1);
-        do {
-            Matr minusGrad = minusGrad1;
-            direct = minusGrad.add(direct.mult(beta));
-            x_k1 = next(direct, x_k, func);
-            diff = x_k1.add(x_k.mult(-1));
-            x_k = x_k1;
-            minusGrad1 = gradient(func, x_k).mult(-1);
-            k++;
-            if (k % 2 == 0) {
-                beta = 0;
-            } else {
-                beta = minusGrad1.norm() / minusGrad.norm();
-            }
-
-        } while (diff.norm() >= EPS); //|| Math.abs(func.f(x_k1.getX(), x_k1.getY()) - func.f(x_k.getX(), x_k.getY())) >= EPS);
-        return x_k1;
-    }
-
-    private static Matr next(Matr direct, Matr x_k, FuncFromMatr func) {
-        double EPS = 1e-7;
-        double left = 0;
-        double right = 100;
-        double phi = (1.0 + Math.sqrt(5)) / 2.0;
-        do {
-            double x1 = right - (right - left) / phi;
-            double x2 = left + (right - left) / phi;
-            double y1 = func.func(x_k.add(direct.mult(x1)));
-            double y2 = func.func(x_k.add(direct.mult(x2)));
-            if (y1 >= y2) {
-                left = x1;
-            } else {
-                right = x2;
-            }
-        } while (Math.abs(right - left) > EPS);
-        left = (left + right) / 2.0;
-        return x_k.add(direct.mult(left));
-    }
-
-    private static Matr gradient(FuncFromMatr function, Matr x_p) {
-        double EPS = 1e-7;
-        double[][] x;
-        if (x_p.getX1().length != 0) {
-            x = new double[x_p.getX1().length][x_p.getX1()[0].length];
-        } else {
-            x = new double[0][0];
-        }
-        double[][] y;
-        double[][] z;
-        if (x_p.getX2().length != 0) {
-            y = new double[x_p.getX2().length][x_p.getX2()[0].length];
-        } else {
-            y = new double[0][0];
-        }
-        if (x_p.getX3().length != 0) {
-            z = new double[x_p.getX3().length][x_p.getX3()[0].length];
-        } else {
-            z = new double[0][0];
-        }
-
-        for (int i = 0; i < x.length; i++) {
-            for (int j = 0; j < x[0].length; j++) {
-                x[i][j] = (function.func(x_p.addToX(EPS, i, j))
-                        - function.func(x_p.addToX(-EPS, i, j))) / (2 * EPS);
-            }
-        }
-        for (int i = 0; i < y.length; i++) {
-            for (int j = 0; j < y[0].length; j++) {
-                y[i][j] = (function.func(x_p.addToY(EPS, i, j))
-                        - function.func(x_p.addToY(-EPS, i, j))) / (2 * EPS);
-            }
-        }
-        for (int i = 0; i < z.length; i++) {
-            for (int j = 0; j < z[0].length; j++) {
-                z[i][j] = (function.func(x_p.addToZ(EPS, i, j))
-                        - function.func(x_p.addToZ(-EPS, i, j))) / (2 * EPS);
-            }
-        }
-        return new Matr(x, y, z);
-    }
-
-    public static double[] conjGradMethod(double[][] matrix, double[] vector) {
+    public double[] conjGradMethod(double[][] matrix, double[] vector) {
         Matrix a = new Matrix(matrix);//, F.length, F[0].length);
         Matrix b = new Matrix(vector, vector.length);
         Matrix x = new Matrix(matrix.length, 1);
@@ -258,23 +474,22 @@ public class Work {
             p = p.times(rsNew / rsOld).plus(r);
             rsOld = rsNew;
         }
-        // System.out.println(A.times(x).minus(b).norm1());
         double[] xRes = new double[matrix.length];
         for (int i = 0; i < xRes.length; i++) {
             xRes[i] = min.get(i, 0);
         }
-        System.out.println("nevyazka " + minNorm);
+//        System.out.println("nevyazka " + minNorm);
         return xRes;
     }
 
-    public static double[][] f_1(Polinom pol, int[] n, int[] p, double[][] x1, double[][] x2, double[][] x3) {
-        double[][] f_1 = new double[n[0] * p[0] + n[1] * p[1] + n[2] * p[2] + n[0] + n[1] + n[2]][x1[0].length];
+    public double[][] f1(Polinom pol, int[] n, int[] p, double[][] x1, double[][] x2, double[][] x3) {
+        double[][] f1 = new double[n[0] * p[0] + n[1] * p[1] + n[2] * p[2] + n[0] + n[1] + n[2]][x1[0].length];
         int offset = 0;
 
         for (int j = 0; j < n[0]; j++) {
             for (int k = 0; k <= p[0]; k++) {
                 for (int q = 0; q < x1[0].length; q++) {
-                    f_1[offset][q] = pol.func(k, x1[j][q]);
+                    f1[offset][q] = pol.func(k, x1[j][q]);
                 }
                 offset++;
             }
@@ -282,7 +497,7 @@ public class Work {
         for (int j = 0; j < n[1]; j++) {
             for (int k = 0; k <= p[1]; k++) {
                 for (int q = 0; q < x2[0].length; q++) {
-                    f_1[offset][q] = pol.func(k, x2[j][q]);
+                    f1[offset][q] = pol.func(k, x2[j][q]);
                 }
                 offset++;
             }
@@ -290,26 +505,26 @@ public class Work {
         for (int j = 0; j < n[2]; j++) {
             for (int k = 0; k <= p[2]; k++) {
                 for (int q = 0; q < x3[0].length; q++) {
-                    f_1[offset][q] = pol.func(k, x3[j][q]);
+                    f1[offset][q] = pol.func(k, x3[j][q]);
                 }
                 offset++;
             }
         }
-        return f_1;
+        return f1;
     }
 
-    public static double[][] f_2(Psi[] psi, double[][] xi, int s, int i) {
-        double[][] f_2 = new double[xi.length][xi[0].length];
+    public double[][] f2(Psi[] psi, double[][] xi, int s, int i) {
+        double[][] f2 = new double[xi.length][xi[0].length];
         for (int k = 0; k < xi.length; k++) {
             for (int j = 0; j < xi[0].length; j++) {
-                f_2[k][j] = psi[i].psi_s_js(s, k, xi[k][j]);
+                f2[k][j] = psi[i].psi_s_js(s, k, xi[k][j]);
             }
         }
-        return f_2;
+        return f2;
     }
 
-    static double[][] F_3(Fi fi, double[][] x1, double[][] x2, double[][] x3, int i) {
-        double[][] F_3 = new double[3][x1[0].length];
+    public double[][] f3(Fi fi, double[][] x1, double[][] x2, double[][] x3, int i) {
+        double[][] f3 = new double[3][x1[0].length];
         double[] x1q = new double[x1.length];
         double[] x2q = new double[x2.length];
         double[] x3q = new double[x3.length];
@@ -325,100 +540,11 @@ public class Work {
             for (int k = 0; k < x3.length; k++) {
                 x3q[k] = x3[k][q];
             }
-            F_3[0][q] = fi.func(i, 1, x1q);
-            F_3[1][q] = fi.func(i, 2, x2q);
-            F_3[2][q] = fi.func(i, 3, x3q);
+            f3[0][q] = fi.func(i, 1, x1q);
+            f3[1][q] = fi.func(i, 2, x2q);
+            f3[2][q] = fi.func(i, 3, x3q);
         }
-        return F_3;
+        return f3;
     }
 
-    public static double[] Conjugate_gradient_method1(double[][] F, double[] l) {
-        Matrix A = new Matrix(F);//, F.length, F[0].length);
-        Matrix b = new Matrix(l, l.length);
-        Matrix x = new Matrix(F.length, 1);
-        A = A.transpose();
-        Matrix direct_k = new Matrix(F.length, 1);
-        Matrix ATA = (A.transpose().times(A)).copy();
-        Matrix ATb = (A.transpose().times(b)).copy();
-        x = ATb;
-        //ATA.set(0, 0, ATA.get(0, 0) + 700);
-        //System.out.println(ATA.det());
-        //x = ATA.inverse().times(ATb);
-        Matrix min = x;
-        double minNorm = A.times(min).minus(b).norm1();
-        for (int i = 0; i < F.length * 10; i++) {
-            Matrix x_prev = x;
-            Matrix direct_k_1 = direct_k;
-            Matrix grad = ATA.times(x).minus(ATb);
-            double betta_k = grad.transpose().times(ATA.times(direct_k_1)).get(0, 0) / direct_k_1.transpose().times(ATA.times(direct_k_1)).get(0, 0);
-            if (i == 0) {
-                betta_k = 0;
-            }
-            direct_k = grad.times(-1).plus(direct_k_1.times(betta_k));
-            x = next(ATA, ATb, x, direct_k);
-            //System.out.println(Math.sqrt(rsnew));
-            //if (A.times(x))
-            double norm = A.times(x).minus(b).norm1();
-            if (norm < minNorm) {
-                min = x;
-                minNorm = norm;
-            }
-            if (Math.sqrt(x.minus(x_prev).norm1()) < 1e-10) {
-
-                break;
-            }
-
-        }
-        // System.out.println(A.times(x).minus(b).norm1());
-        double[] xRes = new double[F.length];
-        for (int i = 0; i < xRes.length; i++) {
-            xRes[i] = min.get(i, 0);
-        }
-        return xRes;
-    }
-
-    private static Matrix next(Matrix A, Matrix b, Matrix x, Matrix direct) {
-        double a = 0;
-        double bb = 1;
-        double phi = (1 + Math.sqrt(5)) / 2;
-        double x1 = 0, x2 = 0, y1, y2;
-
-        while (Math.abs(bb - a) > 1e-10) {
-            x1 = bb - (bb - a) / phi;
-            x2 = a + (bb - a) / phi;
-            Matrix x_1 = x.plus(direct.times(x1));
-            Matrix x_2 = x.plus(direct.times(x2));
-            y1 = A.times(x_1).transpose().times(x_1).minus(b.transpose().times(x_1)).get(0, 0);
-            y2 = A.times(x_2).transpose().times(x_2).minus(b.transpose().times(x_2)).get(0, 0);
-            if (y1 >= y2) {
-                a = x1;
-            } else {
-                bb = x2;
-            }
-
-        }
-        return x.plus(direct.times((x1 + x2) / 2.0));
-    }
-
-    static void nevyazka(Psi psi, double[] bq0, double[][] x1, double[][] x2, double[][] x3) {
-
-        double max = 0;
-        for (int q = 0; q < bq0.length; q++) {
-            double sum = 0;
-            for (int js = 0; js < x1.length; js++) {
-                sum += psi.psi_s_js(1, js, x1[js][q]);
-            }
-            for (int js = 0; js < x2.length; js++) {
-                sum += psi.psi_s_js(2, js, x2[js][q]);
-            }
-            for (int js = 0; js < x3.length; js++) {
-                sum += psi.psi_s_js(3, js, x3[js][q]);
-            }
-            double nev = Math.abs(sum - bq0[q]);
-            if (max < nev) {
-                max = nev;
-            }
-        }
-        System.out.println(max);
-    }
 }
